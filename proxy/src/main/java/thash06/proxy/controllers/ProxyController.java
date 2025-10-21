@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,8 +16,15 @@ public class ProxyController {
 
     private int serviceInstance = 0;
 
+    @Value("${app.instance1}")
+    private String firstInstance;
+
+    @Value("${app.instance2}")
+    private String secondInstance;
+
+
     @GetMapping("/lucasseq")
-    public String getSequenceProxy(@RequestParam("value") int value) {
+    public ResponseEntity<String> getSequenceProxy(@RequestParam("value") int value) {
 
         try {
             String GET_URL = this.getServiceInstanceURL() + "/lucasseq?value=" + value;
@@ -23,6 +32,7 @@ public class ProxyController {
             URL obj = new URL(GET_URL);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
             con.setRequestMethod("GET");
+            con.setRequestProperty("Accept", "application/json");
 
             int responseCode = con.getResponseCode();
             System.out.println("GET Response Code :: " + responseCode);
@@ -37,10 +47,10 @@ public class ProxyController {
                     response.append(inputLine);
                 }
                 in.close();
-                
-                return response.toString();
+
+                return ResponseEntity.ok(response.toString());
             } else {
-                return "Server error";
+                return ResponseEntity.internalServerError().body(null);
             }
             
         } catch (Exception e) {
@@ -49,9 +59,6 @@ public class ProxyController {
     }
 
     private String getServiceInstanceURL() {
-        String firstInstance = "http://localhost:8080";
-        String secondInstance = "http://localhost:8081";
-
         if (firstInstance == null || secondInstance == null) {
             System.out.println("Instances are not configured in the ENV variables!");
             return null;
